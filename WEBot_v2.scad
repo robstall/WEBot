@@ -12,14 +12,36 @@ fcw = 20; // frame channel width
 cd = 10; // channel depth
 fwi = 10; // wheel inset from frame ends
 channelWallThickness = 2.8;
+hornOffset = 22; // How far out the end of the coupler is
 
 // Calculated values
+pb2s = pb2sBatterySize();
+fid = [wcp[1][0]-wcp[0][0]+2*fwi,
+       (pb2s[1]+4)/2,
+       channelWallThickness]; // frame inner dimension
 
-// Drawing for print
-wbRef();
-servo();
-wheels();
-sideFrame();
+// Other constants
+mmPerIn = 25.4;
+$fn = 64;
+drawForPrint = true;
+
+if (drawForPrint) {
+  //wbRef();
+  //servo();
+  //wheels();
+  //sideFrame();
+  //axelSocket();
+  //pb2sBattery();
+  //bottomFrame();
+  rowOfPins(l=50, n=6);
+} else {
+  sideFrameModel();
+  servoModel();
+  pb2sBatteryModel();
+  aa4BatteryHolderModel();
+  wheelsModel();
+  bottomFrameModel();
+}
 
 //
 // Components x, y (printing) translation
@@ -28,14 +50,27 @@ module servo(cutout=false) {
   t = [wcp[2][0] - wcp[0][0], wcp[2][1] - wcp[0][1], 0];
   r = [0,0,90];
   o = cutout ? 1 : 0;
-  translate(t) rotate(r) servoS9001(oversize=o);
+  translate(t) rotate(r) servoS9001(screws=cutout, oversize=o, horn="coupler");
 }
 
 module wheels() {
-  z = 22;
+  z = hornOffset;
   translate([wcp[0][0],wcp[0][1],z]) coaster();
   translate([wcp[1][0],wcp[1][1],z]) coaster();
   translate([wcp[2][0],wcp[2][1],z]) coaster();
+}
+
+// Axel sockets for coasters
+module axelSocket() {
+  axelSocketLen = hornOffset-channelWallThickness;
+  od = mmPerIn/2;
+  id = mmPerIn/4;
+  difference() { 
+    cylinder(d=od, h=axelSocketLen); 
+    translate([0, 0, -.001]) cylinder(d=id, h=axelSocketLen+.002); 
+  }
+  translate([-2, -fcw/2+1, 0]) cube([4, 4, cd-channelWallThickness]);
+  translate([-2, fcw/2-5, 0]) cube([4, 4, cd-channelWallThickness]);
 }
 
 module sideFrame() {
@@ -55,16 +90,69 @@ module sideFrame() {
   cov = [dcw - 2*cwt, cwt + .2, cd - cwt];
   cot = [wcp[2][0] - dcw/2 + cwt, fcw/2-cwt-.1, cwt+.001];
   
+  // Draw frame and cutout the servo
   difference() {
-    translate(ft) channel(fcv);
-    translate(cot) cube(cov);
+    union() {
+      difference() {
+        translate(ft) channel(fcv);
+        translate(cot) cube(cov);
+      }
+      translate(dt) rotate(dr) channel(dcv);
+    }
+    servo(cutout=true);
   }
-  translate(dt) rotate(dr) channel(dcv);
+  
+  // Axel sockets for coasters
+  translate(wcp[0]) translate([0,0,channelWallThickness-.001]) axelSocket();
+  translate(wcp[1]) translate([0,0,channelWallThickness-.001]) axelSocket();
+}
+
+module bottomFrame() {
+  cwt = channelWallThickness;
+  cube(fid);
+  cube([fid[0], cwt, fcw/2]);
 }
 
 //
-// Components rotated to view
+// Components rotated to view and translated to position
 //
+
+module sideFrameModel() {
+  rotate([90, 0, 0]) sideFrame();
+}
+
+module pb2sBatteryModel() {
+  color("red")
+    translate([0, 1, -7]) pb2sBattery();
+}
+
+module aa4BatteryHolderModel() {
+  color("red")
+    translate([44, 1, 1]) aa4BatteryHolder();
+}
+
+module servoModel() {
+  color("blue") 
+    rotate([90, 0, 0]) servo();
+}
+
+module wheelsModel() {
+  color("blue")
+    rotate([90, 0, 0]) wheels();
+}
+
+module bottomFrameModel() {
+  t = [-fwi, 0, -fcw/2];
+  translate(t) bottomFrame();
+}
+
+// draws a row of n pins within a bounding rect l by d with its ll corner at 0.0
+module rowOfPins(l=0, n=1, h=channelWallThickness*2+.001, d=3.2) {
+  spc = n == 1 ? l : (l-d) / (n-1);
+  for (i = [0:n-1]) {
+    translate([d/2+spc*i, d/2, 0]) cylinder(h=h, d=d);
+  }
+}
 
 //
 // Other bits and pieces
@@ -81,7 +169,7 @@ module channel(v, wall=channelWallThickness) {
 
 // Wheel base reference triange
 module wbRef(center=false) {
-  z = 17;
+  z = hornOffset;
   ct = center ? [-wcp[1][0]/2,0,z] : [0,0,z];
   color("black") 
     translate(ct) {
@@ -90,6 +178,12 @@ module wbRef(center=false) {
         offset(-.2) polygon(wcp);
       }
     }
+}
+
+// Tap pin
+module tap(d=2.5, h=10) {
+  color("cyan")
+    cylinder(d=d, h=h);
 }
 
 
