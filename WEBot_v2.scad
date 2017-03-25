@@ -23,7 +23,7 @@ fid = [wcp[1][0]-wcp[0][0]+2*fwi,
 // Other constants
 mmPerIn = 25.4;
 $fn = 64;
-drawForPrint = true;
+drawForPrint = false;
 
 if (drawForPrint) {
   //wbRef();
@@ -32,15 +32,15 @@ if (drawForPrint) {
   //sideFrame();
   //axelSocket();
   //pb2sBattery();
-  //bottomFrame();
-  rowOfPins(l=50, n=6);
+  bottomFrame();
+  //rowOfPins(l=50, n=6);
 } else {
   sideFrameModel();
-  servoModel();
-  pb2sBatteryModel();
-  aa4BatteryHolderModel();
-  wheelsModel();
-  bottomFrameModel();
+  //servoModel();
+  //pb2sBatteryModel();
+  //aa4BatteryHolderModel();
+  //wheelsModel();
+  //bottomFrameModel();
 }
 
 //
@@ -90,12 +90,13 @@ module sideFrame() {
   cov = [dcw - 2*cwt, cwt + .2, cd - cwt];
   cot = [wcp[2][0] - dcw/2 + cwt, fcw/2-cwt-.1, cwt+.001];
   
-  // Draw frame and cutout the servo
+  // Draw frame and cutout the servo and pin holse
   difference() {
     union() {
       difference() {
         translate(ft) channel(fcv);
         translate(cot) cube(cov);
+        translate([0,-fcw/5*1.5,-.0005]) rowOfPins(l=fid[0]-fwi*2, n=5);
       }
       translate(dt) rotate(dr) channel(dcv);
     }
@@ -111,6 +112,11 @@ module bottomFrame() {
   cwt = channelWallThickness;
   cube(fid);
   cube([fid[0], cwt, fcw/2]);
+  
+  // Pins to hold it to side
+  translate([fwi, cwt, fcw/5]) 
+    rotate([90, 0, 0]) 
+      rowOfPins(l=fid[0]-fwi*2, n=5);
 }
 
 //
@@ -150,7 +156,7 @@ module bottomFrameModel() {
 module rowOfPins(l=0, n=1, h=channelWallThickness*2+.001, d=3.2) {
   spc = n == 1 ? l : (l-d) / (n-1);
   for (i = [0:n-1]) {
-    translate([d/2+spc*i, d/2, 0]) cylinder(h=h, d=d);
+    color("cyan") translate([d/2+spc*i, d/2, 0]) cylinder(h=h, d=d);
   }
 }
 
