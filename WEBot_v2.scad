@@ -23,7 +23,7 @@ fid = [wcp[1][0]-wcp[0][0]+2*fwi,
 // Other constants
 mmPerIn = 25.4;
 $fn = 64;
-drawForPrint = true;
+drawForPrint = false;
 halfModel = true;
 
 if (drawForPrint) {
@@ -97,7 +97,10 @@ module sideFrame() {
       difference() {
         translate(ft) channel(fcv);
         translate(cot) cube(cov);
-        translate([0,-fcw/5*1.5,-.0005]) rowOfPins(l=fid[0]-fwi*2, n=5);
+        // Pin holes
+        translate([-fwi,-fcw/5*2.5,0]) 
+          rotate([-90,0,0]) 
+            bottomFramePins(cutout=true);
       }
       translate(dt) rotate(dr) channel(dcv);
     }
@@ -119,10 +122,17 @@ module bottomFrameHalf() {
   translate([cwt,fid[1],0]) rotate([90,0,-90]) cube(endChannel);
   
   // Pins to hold it to side
+  bottomFramePins();
+}
+
+module bottomFramePins(cutout=false) {
+  cwt = channelWallThickness;
   translate([fwi, cwt, fcw/5]) 
     rotate([90, 0, 0]) 
-      rowOfPins(l=fid[0]-fwi*2, n=5);
-  rowOfPins(l=fid[0]-cwt*2, n=10);
+      rowOfPins(l=fid[0]-fwi*2, n=5, cutout=cutout);
+  translate([cwt, cwt, fcw-cwt*2]) 
+    rotate([90, 0, 0]) 
+      rowOfPins(l=fid[0]-cwt*2, n=2, cutout=cutout);
 }
 
 module bottomFrame(half=false) {
@@ -166,10 +176,11 @@ module bottomFrameModel(half=halfModel) {
 }
 
 // draws a row of n pins within a bounding rect l by d with its ll corner at 0.0
-module rowOfPins(l=0, n=1, h=channelWallThickness*2+.001, d=3.2) {
+module rowOfPins(l=0, n=1, h=channelWallThickness*2, d=3.2, cutout=false) {
+  co = cutout ? 0.02 : 0;
   spc = n == 1 ? l : (l-d) / (n-1);
   for (i = [0:n-1]) {
-    color("cyan") translate([d/2+spc*i, d/2, 0]) cylinder(h=h, d=d);
+    color("cyan") translate([d/2+spc*i, d/2, -co/2]) cylinder(h=h+co, d=d);
   }
 }
 
