@@ -23,7 +23,8 @@ fid = [wcp[1][0]-wcp[0][0]+2*fwi,
 // Other constants
 mmPerIn = 25.4;
 $fn = 64;
-drawForPrint = false;
+drawForPrint = true;
+halfModel = true;
 
 if (drawForPrint) {
   //wbRef();
@@ -32,7 +33,7 @@ if (drawForPrint) {
   //sideFrame();
   //axelSocket();
   //pb2sBattery();
-  bottomFrame();
+  bottomFrame(half=halfModel);
   //rowOfPins(l=50, n=6);
 } else {
   sideFrameModel();
@@ -40,7 +41,7 @@ if (drawForPrint) {
   //pb2sBatteryModel();
   //aa4BatteryHolderModel();
   //wheelsModel();
-  //bottomFrameModel();
+  //bottomFrameModel(half=halfModel);
 }
 
 //
@@ -108,15 +109,27 @@ module sideFrame() {
   translate(wcp[1]) translate([0,0,channelWallThickness-.001]) axelSocket();
 }
 
-module bottomFrame() {
+module bottomFrameHalf() {
   cwt = channelWallThickness;
   cube(fid);
   cube([fid[0], cwt, fcw/2]);
+  
+  endChannel = [fid[1], fcw, cwt];
+  translate([fid[0]-cwt,0,0]) rotate([90,0,90]) cube(endChannel);
+  translate([cwt,fid[1],0]) rotate([90,0,-90]) cube(endChannel);
   
   // Pins to hold it to side
   translate([fwi, cwt, fcw/5]) 
     rotate([90, 0, 0]) 
       rowOfPins(l=fid[0]-fwi*2, n=5);
+  rowOfPins(l=fid[0]-cwt*2, n=10);
+}
+
+module bottomFrame(half=false) {
+  bottomFrameHalf();
+  if (!half) {
+    translate([0, 2*fid[1], 0]) mirror([0,1,0]) bottomFrameHalf();
+  }
 }
 
 //
@@ -147,9 +160,9 @@ module wheelsModel() {
     rotate([90, 0, 0]) wheels();
 }
 
-module bottomFrameModel() {
+module bottomFrameModel(half=halfModel) {
   t = [-fwi, 0, -fcw/2];
-  translate(t) bottomFrame();
+  translate(t) bottomFrame(half=halfModel);
 }
 
 // draws a row of n pins within a bounding rect l by d with its ll corner at 0.0
