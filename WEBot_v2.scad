@@ -13,18 +13,31 @@ cd = 10; // channel depth
 fwi = 10; // wheel inset from frame ends
 channelWallThickness = 2.8;
 hornOffset = 22; // How far out the end of the coupler is
+pinDiam = 3.2;
 
 // Calculated values
 pb2s = pb2sBatterySize();
 fid = [wcp[1][0]-wcp[0][0]+2*fwi,
-       (pb2s[1]+4)/2,
-       channelWallThickness]; // frame inner dimension
+       (pb2s[1]+8)/2,
+       channelWallThickness]; // frame inner dimension for half model
+
+bottomCutoutTriangleOnePoints = [
+  [0, 0],
+  [fid[0]/2*0.65, 0],
+  [(fid[0]/2*0.65)/2, fid[1]*0.6]
+];
+
+bottomCutoutTriangleTwoPoints = [
+  [0, 0],
+  [fid[0]/10-1, fid[1]/3],
+  [0, fid[1]/3]
+];
 
 // Other constants
 mmPerIn = 25.4;
 $fn = 64;
-drawForPrint = false;
-halfModel = true;
+drawForPrint = true;
+halfModel = false;
 
 if (drawForPrint) {
   //wbRef();
@@ -37,11 +50,20 @@ if (drawForPrint) {
   //rowOfPins(l=50, n=6);
 } else {
   sideFrameModel();
-  //servoModel();
-  //pb2sBatteryModel();
-  //aa4BatteryHolderModel();
-  //wheelsModel();
-  //bottomFrameModel(half=halfModel);
+  servoModel();
+  wheelsModel();
+  if (!halfModel) {
+    translate([0, fid[1]*2, 0]) {
+      mirror([0,1,0]) {
+        sideFrameModel();
+        servoModel();
+        wheelsModel();
+      }
+    }
+  }
+  pb2sBatteryModel();
+  aa4BatteryHolderModel();
+  bottomFrameModel(half=halfModel);
 }
 
 //
@@ -97,13 +119,15 @@ module sideFrame() {
       difference() {
         translate(ft) channel(fcv);
         translate(cot) cube(cov);
-        // Pin holes
+        // Pin holes for bottom frame piece
         translate([-fwi,-fcw/5*2.5,0]) 
           rotate([-90,0,0]) 
             bottomFramePins(cutout=true);
       }
       translate(dt) rotate(dr) channel(dcv);
     }
+    // Pin holes for mounting things to frame
+    sideFrameMountingPinHoles();
     servo(cutout=true);
   }
   
@@ -112,11 +136,40 @@ module sideFrame() {
   translate(wcp[1]) translate([0,0,channelWallThickness-.001]) axelSocket();
 }
 
+module sideFrameMountingPinHoles() {
+  fcl = wcp[1][0] - wcp[0][0] + 2*fwi; // Frame channel length
+  translate([fcl-75,fcw/2+1,cd/2]) rotate([90,0,0]) rowOfPins(l=60, n=7, cutout=true);
+      translate([-5,fcw/2+1,cd/2]) rotate([90,0,0]) rowOfPins(l=20, n=3, cutout=true);
+      translate([17,fcw-5,cd/2]) rotate([90,0,90]) rowOfPins(l=40, n=5, cutout=true);
+      translate([41,fcw-5,cd/2]) rotate([90,0,90]) rowOfPins(l=40, n=5, cutout=true);
+}
+
 module bottomFrameHalf() {
   cwt = channelWallThickness;
-  cube(fid);
-  cube([fid[0], cwt, fcw/2]);
   
+  difference() {
+    cube(fid);
+   
+    // Three larger triangles
+    t1 = bottomCutoutTriangleOnePoints;
+    t1w = t1[1][0] - t1[0][0];
+    t1h = t1[2][1] - t1[0][1];
+    t1o = .4*22;
+    translate([0+t1o, 0+t1o, -1]) rpolygon(t1, r=2, h=3);
+    translate([fid[0]-t1w-t1o, 0+t1o, -1]) rpolygon(t1, r=2, h=3);
+    translate([fid[0]/2-t1w/2, t1h+t1o, 5]) rotate([180,0,0]) rpolygon(t1, r=2, h=3);
+  
+    // Two triangle on end
+    t2 = bottomCutoutTriangleTwoPoints;
+    translate([t1o, t1o*2+cwt*2, -1]) rpolygon(t2, r=2, h=3);
+    translate([fid[0]-cwt*3, t1o*2+cwt*2, 5]) rotate([0,180,0]) rpolygon(t2, r=2, h=3);
+  }
+  
+  cube([fid[0], cwt, fcw/2]);
+  translate([cwt,0,0]) cube([5,cwt,fcw]);
+  translate([fid[0]-5-cwt,0,0]) cube([5,cwt,fcw]);
+  
+  // End pieces
   endChannel = [fid[1], fcw, cwt];
   translate([fid[0]-cwt,0,0]) rotate([90,0,90]) cube(endChannel);
   translate([cwt,fid[1],0]) rotate([90,0,-90]) cube(endChannel);
@@ -152,12 +205,12 @@ module sideFrameModel() {
 
 module pb2sBatteryModel() {
   color("red")
-    translate([0, 1, -7]) pb2sBattery();
+    translate([0, 4, -9]) pb2sBattery();
 }
 
 module aa4BatteryHolderModel() {
   color("red")
-    translate([44, 1, 1]) aa4BatteryHolder();
+    translate([44, 3, 1]) aa4BatteryHolder();
 }
 
 module servoModel() {
@@ -176,7 +229,7 @@ module bottomFrameModel(half=halfModel) {
 }
 
 // draws a row of n pins within a bounding rect l by d with its ll corner at 0.0
-module rowOfPins(l=0, n=1, h=channelWallThickness*2, d=3.2, cutout=false) {
+module rowOfPins(l=0, n=1, h=channelWallThickness*2, d=pinDiam, cutout=false) {
   co = cutout ? 0.02 : 0;
   spc = n == 1 ? l : (l-d) / (n-1);
   for (i = [0:n-1]) {
