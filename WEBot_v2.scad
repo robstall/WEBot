@@ -13,7 +13,7 @@ cd = 10; // channel depth
 fwi = 10; // wheel inset from frame ends
 channelWallThickness = 2.8;
 hornOffset = 22; // How far out the end of the coupler is
-pinDiam = 3.2;
+pinDiam = 4;
 
 // Calculated values
 pb2s = pb2sBatterySize();
@@ -50,8 +50,8 @@ if (drawForPrint) {
   //rowOfPins(l=50, n=6);
 } else {
   sideFrameModel();
-  servoModel();
-  wheelsModel();
+  //servoModel();
+  //wheelsModel();
   if (!halfModel) {
     translate([0, fid[1]*2, 0]) {
       mirror([0,1,0]) {
@@ -61,8 +61,8 @@ if (drawForPrint) {
       }
     }
   }
-  pb2sBatteryModel();
-  aa4BatteryHolderModel();
+  //pb2sBatteryModel();
+  //aa4BatteryHolderModel();
   bottomFrameModel(half=halfModel);
 }
 
@@ -138,10 +138,11 @@ module sideFrame() {
 
 module sideFrameMountingPinHoles() {
   fcl = wcp[1][0] - wcp[0][0] + 2*fwi; // Frame channel length
-  translate([fcl-75,fcw/2+1,cd/2]) rotate([90,0,0]) rowOfPins(l=60, n=7, cutout=true);
-      translate([-5,fcw/2+1,cd/2]) rotate([90,0,0]) rowOfPins(l=20, n=3, cutout=true);
-      translate([17,fcw-5,cd/2]) rotate([90,0,90]) rowOfPins(l=40, n=5, cutout=true);
-      translate([41,fcw-5,cd/2]) rotate([90,0,90]) rowOfPins(l=40, n=5, cutout=true);
+  z = cd/2-pinDiam/2;
+  translate([fcl-75,fcw/2+1,z]) rotate([90,0,0]) rowOfPins(l=60, n=7, cutout=true);
+  translate([-5,fcw/2+1,z]) rotate([90,0,0]) rowOfPins(l=20, n=3, cutout=true);
+  translate([17,fcw-5,z]) rotate([90,0,90]) rowOfPins(l=40, n=5, cutout=true);
+  translate([41,fcw-5,z]) rotate([90,0,90]) rowOfPins(l=40, n=5, cutout=true);
 }
 
 module bottomFrameHalf() {
@@ -159,15 +160,18 @@ module bottomFrameHalf() {
     translate([fid[0]-t1w-t1o, 0+t1o, -1]) rpolygon(t1, r=2, h=3);
     translate([fid[0]/2-t1w/2, t1h+t1o, 5]) rotate([180,0,0]) rpolygon(t1, r=2, h=3);
   
-    // Two triangle on end
+    // Two triangles on ends
     t2 = bottomCutoutTriangleTwoPoints;
     translate([t1o, t1o*2+cwt*2, -1]) rpolygon(t2, r=2, h=3);
     translate([fid[0]-cwt*3, t1o*2+cwt*2, 5]) rotate([0,180,0]) rpolygon(t2, r=2, h=3);
   }
   
-  cube([fid[0], cwt, fcw/2]);
-  translate([cwt,0,0]) cube([5,cwt,fcw]);
-  translate([fid[0]-5-cwt,0,0]) cube([5,cwt,fcw]);
+  // Side rail
+  cube([fid[0], cwt, fcw/2]); 
+  
+  // Upper pin mount
+  translate([cwt,0,0]) cube([7,cwt,fcw]);
+  translate([fid[0]-7-cwt,0,0]) cube([7,cwt,fcw]);
   
   // End pieces
   endChannel = [fid[1], fcw, cwt];
@@ -180,10 +184,10 @@ module bottomFrameHalf() {
 
 module bottomFramePins(cutout=false) {
   cwt = channelWallThickness;
-  translate([fwi, cwt, fcw/5]) 
+  translate([fwi, cwt, cwt]) 
     rotate([90, 0, 0]) 
       rowOfPins(l=fid[0]-fwi*2, n=5, cutout=cutout);
-  translate([cwt, cwt, fcw-cwt*2]) 
+  translate([cwt, cwt, fcw-cwt*3]) 
     rotate([90, 0, 0]) 
       rowOfPins(l=fid[0]-cwt*2, n=2, cutout=cutout);
 }
