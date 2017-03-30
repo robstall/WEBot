@@ -36,7 +36,7 @@ bottomCutoutTriangleTwoPoints = [
 // Other constants
 mmPerIn = 25.4;
 $fn = 64;
-drawForPrint = false;
+drawForPrint = true;
 halfModel = false;
 
 if (drawForPrint) {
@@ -111,7 +111,7 @@ module axelSocket() {
 module axel() {
   axelSocketLen = hornOffset-channelWallThickness;
   cylinder(d=mmPerIn/2, h=1); 
-  cylinder(d=mmPerIn/4, h=axelSocketLen-channelWallThickness+6);
+  cylinder(d=mmPerIn/4, h=axelSocketLen-channelWallThickness-1);
 }
 
 module sideFrame() {
